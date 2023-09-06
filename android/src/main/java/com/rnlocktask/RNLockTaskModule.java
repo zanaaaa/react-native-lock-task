@@ -6,6 +6,11 @@ import android.app.admin.DevicePolicyManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.app.ActivityManager;
+import android.content.Intent;
+import android.provider.Settings;
+import android.net.Uri;
+import android.os.PowerManager;
+import android.content.pm.PackageManager;
 
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
@@ -23,6 +28,7 @@ public class RNLockTaskModule extends ReactContextBaseJavaModule {
   private static final String LOCKED_TASK = "LOCKED_TASK";
   private static final String LOCKED_TASK_AS_OWNER = "LOCKED_TASK_AS_OWNER";
   private static final String UNLOCKED_TASK = "UNLOCKED_TASK";
+  private static final String STARTED_BATTERY_INTENT = "STARTED BATTERY INTENT";
 
   public RNLockTaskModule(ReactApplicationContext reactContext) {
     super(reactContext);
@@ -31,6 +37,28 @@ public class RNLockTaskModule extends ReactContextBaseJavaModule {
   @Override
   public String getName() {
     return "RNLockTask";
+  }
+
+  @ReactMethod
+  public void requestBatteryOptimizations(Promise promise) {
+    try{
+      String packageName = getCurrentActivity().getPackageName();
+
+      // Check if the app is already on the battery optimization whitelist
+      PowerManager powerManager = (PowerManager) getCurrentActivity().getSystemService(Context.POWER_SERVICE);
+      if (powerManager != null) {
+        if (!powerManager.isIgnoringBatteryOptimizations(packageName)) {
+          // If not on the whitelist, start the intent to request exemption
+          Intent intent = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+          intent.setData(Uri.parse("package:" + packageName));
+          getCurrentActivity().startActivity(intent);
+          promise.resolve(STARTED_BATTERY_INTENT);
+        }
+      }
+    } catch(Exception e) {
+      promise.reject(e);
+    }
+
   }
 
   @ReactMethod
