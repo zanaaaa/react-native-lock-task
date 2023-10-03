@@ -81,28 +81,8 @@ public class RNLockTaskModule extends ReactContextBaseJavaModule {
     try {
       Activity mActivity = getCurrentActivity();
       if (mActivity != null) {
-        DevicePolicyManager myDevicePolicyManager = (DevicePolicyManager) mActivity.getSystemService(Context.DEVICE_POLICY_SERVICE);
-        ActivityManager activityManager = (ActivityManager) mActivity.getSystemService(Context.ACTIVITY_SERVICE);
-        int lockTaskModeState = activityManager.getLockTaskModeState();
-         if (lockTaskModeState != ActivityManager.LOCK_TASK_MODE_LOCKED && 
-          lockTaskModeState != ActivityManager.LOCK_TASK_MODE_PINNED) {
-          ComponentName mDPM = new ComponentName(mActivity, MyAdmin.class);
-          if (myDevicePolicyManager.isDeviceOwnerApp(mActivity.getPackageName())) {
-            ArrayList<String> packages = new ArrayList<>();
-            packages.add(mActivity.getPackageName());
-            if(additionalPackages != null){
-              for (int i = 0; i < additionalPackages.size(); i++) {
-                packages.add(additionalPackages.getString(i));
-              }
-            }
-            myDevicePolicyManager.setLockTaskPackages(mDPM, packages.toArray(new String[0]));
-            mActivity.startLockTask();
-            promise.resolve(LOCKED_TASK_AS_OWNER);
-          } else {
-            mActivity.startLockTask();
-            promise.resolve(LOCKED_TASK);
-          }
-        }
+          mActivity.startLockTask();
+          promise.resolve(LOCKED_TASK);
       } else{
         promise.reject(ACTIVITY_GONE, "Activity gone or mismatch");
       }
