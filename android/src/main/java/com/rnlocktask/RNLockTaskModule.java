@@ -29,6 +29,7 @@ public class RNLockTaskModule extends ReactContextBaseJavaModule {
   private static final String LOCKED_TASK_AS_OWNER = "LOCKED_TASK_AS_OWNER";
   private static final String UNLOCKED_TASK = "UNLOCKED_TASK";
   private static final String STARTED_BATTERY_INTENT = "STARTED BATTERY INTENT";
+  private static final String AUTO_GRANTED_PERMISSIONS = "AUTO GRANTED PERMISSIONS";
 
   public RNLockTaskModule(ReactApplicationContext reactContext) {
     super(reactContext);
@@ -77,15 +78,36 @@ public class RNLockTaskModule extends ReactContextBaseJavaModule {
   }
 
   @ReactMethod
-  public void startLockTaskWith(ReadableArray additionalPackages, Promise promise) {
+  public  void autoGrantPermissions(Promise promise) {
     try {
       Activity mActivity = getCurrentActivity();
       if (mActivity != null) {
-          mActivity.startLockTask();
-          promise.resolve(LOCKED_TASK);
-      } else{
-        promise.reject(ACTIVITY_GONE, "Activity gone or mismatch");
+        DevicePolicyManager myDevicePolicyManager = (DevicePolicyManager) mActivity.getSystemService(Context.DEVICE_POLICY_SERVICE);
+        ComponentName mDPM = new ComponentName(mActivity, MyAdmin.class);
+        myDevicePolicyManager.setPermissionPolicy(mDPM, myDevicePolicyManager.PERMISSION_POLICY_AUTO_GRANT);
+        promise.resolve(AUTO_GRANTED_PERMISSIONS);
       }
+      promise.reject(ACTIVITY_GONE, "Activity gone or mismatch");
+    } catch (Exception e) {
+      promise.reject(e);
+    }
+  }
+
+  @ReactMethod
+  public void startLockTaskWith(ReadableArray additionalPackages, Promise promise) {
+    try {
+      Activity mActivity = getCurrentActivity();
+      ActivityManager activityManager = (ActivityManager) mActivity.getSystemService(Context.ACTIVITY_SERVICE);
+      int lockTaskModeState = activityManager.getLockTaskModeState();
+      if (lockTaskModeState != ActivityManager.LOCK_TASK_MODE_LOCKED && 
+      lockTaskModeState != ActivityManager.LOCK_TASK_MODE_PINNED) {
+        if (mActivity != null) {
+            mActivity.startLockTask();
+            promise.resolve(LOCKED_TASK);
+        } else{
+          promise.reject(ACTIVITY_GONE, "Activity gone or mismatch");
+        }
+      } 
     } catch (Exception e) {
       promise.reject(e);
     }
